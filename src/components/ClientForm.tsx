@@ -2,13 +2,17 @@ import * as React from 'react';
 import { Form, FormGroup, Label, Input, Button, Col} from 'reactstrap';
 import { ListClients } from './ListClients';
 import axios from 'axios';
-import { Client } from './commons/Client';
-import { Notify} from './commons/Notify';
+import { Client, Type} from './commons/Client';
+// import { Notify} from './commons/Notify';
 
 export interface Props { }
 interface State {
   clients: Array<Client>;
   notify: boolean;
+  firstName: string;
+  lastName: string;
+  type: Type;
+
 }
 
 class ClientForm extends React.Component<Props, State> {
@@ -16,7 +20,11 @@ class ClientForm extends React.Component<Props, State> {
     super(props);
     this.state = {
       notify: false,
-      clients: []
+      clients: [],
+      firstName: '',
+      lastName: '',
+      type: 'Business'
+
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -34,25 +42,45 @@ class ClientForm extends React.Component<Props, State> {
       this.setState({
         clients: clientList,
       });
-      this.state.clients.map((item, key) => console.log(item));
     });
   }
 
   handleChange(event: React.SyntheticEvent) {
-    // let target = event.target as HTMLInputElement;
-    // this.setState({ value: target.value });
+    let target = event.target as HTMLInputElement;
+    const eventName = target.name;
+    switch(eventName){
+      case "firstName": {
+        this.setState({ 
+          firstName: target.value,
+        });
+      }
+      case "lastName": {
+        this.setState({ 
+          lastName: target.value,
+        });
+      }
+      case "type": {
+        this.setState({ 
+          type: target.value == 'Business' ? 'Business' : 'Individual' 
+        });
+      }
+
+    }
+   
   }
 
   handleSubmit(event: React.SyntheticEvent) {
-    const data = { name: "newName", type: "Business" }
+    const data = { firstName: this.state.firstName, lastName: this.state.lastName, type: this.state.type }
     var headers = {
       'Content-Type': 'application/json',
     }
 
     axios.post(`http://localhost:8080/client`, data, { headers: headers })
       .then((response) => {
-        console.log('success');
+        const  client = new Client(response.data);
+        this.setState({clients: [...this.state.clients, client]});
         this.setState({notify: true});
+        this.setState({firstName: '', lastName: '', type: 'Business'});
       })
       .catch((error) => {
         console.log('failed....');
@@ -70,19 +98,19 @@ class ClientForm extends React.Component<Props, State> {
           <FormGroup row> 
             <Label for="firstName" sm={2} size="lg">First Name:</Label>
             <Col sm={10}>
-            <Input name="firstName" id="firstName" />
+            <Input name="firstName" id="firstName"  onChange={this.handleChange}/>
             </Col>
           </FormGroup>
           <FormGroup row> 
-            <Label for="lastName" sm={2} size="lg">Last Name:</Label>
+            <Label for="lastName" sm={2} size="lg" >Last Name:</Label>
             <Col sm={10}>
-            <Input name="lastName" id="lastName" />
+            <Input name="lastName" id="lastName" onChange={this.handleChange}/>
             </Col>
           </FormGroup>
           <FormGroup row> 
             <Label for="type" sm={2} size="lg">Account Type:</Label>
             <Col sm={10}>
-            <Input type="select" name="type" id="type" >
+            <Input type="select" name="type" id="type" onChange={this.handleChange}>
               <option>Business</option>
               <option>Individual</option>
             </Input>
